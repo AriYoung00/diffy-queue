@@ -10,3 +10,7 @@ edition = "2018"
 
 [dev-dependencies]
 plotters = "0.3.0"
+meval = "0.2"
+num = "0.4.0"
+prettytable-rs = "0.8.0"
+ctrlc = "3.1.9"

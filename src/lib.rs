@@ -1,3 +1,3 @@
 pub mod euler;
 pub mod solver;
-mod runge_kutta;
+pub mod runge_kutta;
