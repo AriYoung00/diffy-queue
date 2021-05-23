@@ -1,15 +1,15 @@
 use crate::solver::Solver;
 use std::cmp::Ordering::Equal;
 
-pub struct EulerSolver {
+pub struct EulerSolver<'a> {
     t_curr: f32,
     x_curr: f32,
     step_size: f32,
     solved_pts: Vec<(f32, f32)>,
-    f: fn(f32, f32) -> f32,
+    f: &'a dyn Fn(f32, f32) -> f32,
 }
 
-impl Solver for EulerSolver {
+impl Solver for EulerSolver<'_> {
     fn solve_at_point(&mut self, t: f32) -> Option<f32> {
         println!("\nSolving at t={}, max={}", t, self.t_curr);
         if t > self.t_curr {
@@ -43,23 +43,18 @@ impl Solver for EulerSolver {
     }
 }
 
-// impl Iterator for &mut EulerSolver {
-//     type Item = (f32, f32);
-//     fn next(&mut self) -> Option<(f32, f32)> { self._next() }
-// }
-
-impl Iterator for EulerSolver {
+impl Iterator for EulerSolver<'_> {
     type Item = (f32, f32);
     fn next(&mut self) -> Option<(f32, f32)> { self._next() }
 }
 
-pub fn create_euler_solver (f: fn(f32, f32) -> f32, t_0: f32, x_0: f32, step_size: f32) ->
+pub fn create_euler_solver (f: &dyn Fn(f32, f32) -> f32, t_0: f32, x_0: f32, step_size: f32) ->
                                                                         EulerSolver {
     EulerSolver {
         t_curr: t_0,
         x_curr: x_0,
         step_size,
-        solved_pts: vec![],
+        solved_pts: vec![(t_0, x_0)],
         f
     }
 }
