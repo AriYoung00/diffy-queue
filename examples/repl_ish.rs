@@ -59,8 +59,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut state = ReplState::ENTER_EQUATION;
 
     let mut equation: Option<meval::Expr> = None;
-    let mut initial = (0f32, 0f32);
-    let mut points: Vec<f32> = vec![];
+    let mut initial = (0f64, 0f64);
+    let mut points: Vec<f64> = vec![];
 
     while should_cont {
         buffer.clear();
@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     io::stdin().read_line(&mut buffer);
                     println!("{}", buffer);
                     println!("len: {}", buffer.len());
-                    match buffer.trim().parse::<f32>() {
+                    match buffer.trim().parse::<f64>() {
                         Ok(num) => points.push(num),
                         Err(_) => { state = SOLVE_POINTS; break }
                     }
@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     state = ENTER_EQUATION;
                     continue;
                 }
-                let f = move |t: f32, x: f32| e(t as f64, x as f64) as f32;
+                let f = move |t: f64, x: f64| e(t as f64, x as f64) as f64;
 
                 let mut euler = euler::create_euler_solver(&f, initial.0, initial.1, h);
                 let mut rk4 = runge_kutta::create_rk4_solver(&f, initial.0, initial.1, h);

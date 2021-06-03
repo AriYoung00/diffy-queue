@@ -1,9 +1,9 @@
 use plotters::prelude::*;
-use std::f32::consts::E;
+use std::f64::consts::E;
 
-use diffy_queue::euler;
-use diffy_queue::runge_kutta as rk;
+use diffy_queue::runge_kutta::{RK4Solver, DOPRISolver};
 use diffy_queue::solver::Solver;
+use diffy_queue::euler::EulerSolver;
 
 fn graph_series_in_bounds(x_min: i32, x_max: i32, y_min: i32, y_max: i32) {
     let root = BitMapBackend::new("images/test_chart.png", (900, 600))
@@ -15,37 +15,44 @@ fn graph_series_in_bounds(x_min: i32, x_max: i32, y_min: i32, y_max: i32) {
         .margin(10)
         .set_label_area_size(LabelAreaPosition::Left, 40)
         .set_label_area_size(LabelAreaPosition::Bottom, 40)
-        .build_cartesian_2d(x_min as f32..x_max as f32, y_min as f32..y_max as f32)
+        .build_cartesian_2d(x_min as f64..x_max as f64, y_min as f64..y_max as f64)
         .unwrap();
 
     ctx.configure_mesh().draw().unwrap();
 
     let f_t_x = |t, x| t*x;
-    let mut solver = euler::create_euler_solver(&f_t_x, 0.0, 1.0, 0.01);
-    let mut rk4_solver = rk::create_rk4_solver(&f_t_x, 0.0, 1.0, 0.01);
-    let actual_soln = |t: f32| E.powf(0.5 * t.powf(2.0));
+    let mut solver = EulerSolver::new(f_t_x, 0.0, 1.0, 0.01);
+    let mut rk4_solver = RK4Solver::new(&f_t_x, 0.0, 1.0, 0.01);
+    let mut dopri_solver = DOPRISolver::new(&f_t_x, 0.0, 1.0, 0.01, 0.001, 1.0);
+    let actual_soln = |t: f64| E.powf(0.5 * t.powf(2.0));
 
-    println!("computed(1.0) = {}", solver.solve_at_point(1.0).unwrap());
+    // ctx.draw_series(
+    //     LineSeries::new((0..=x_max*10)
+    //                         .map(|x| x as f64 / 10.0)
+    //                         .map(|x| (x, solver.solve_at_point(x).unwrap())), &RED)
+    // ).unwrap()
+    //     .label("Euler")
+    //     .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+    //
+    // ctx.draw_series(
+    //     LineSeries::new((x_min*10..=x_max*10)
+    //                         .map(|x| x as f64 / 10.0)
+    //                         .map(|x| (x, rk4_solver.solve_at_point(x).unwrap())), &BLUE)
+    // ).unwrap()
+    //     .label("Runge-Kutta")
+    //     .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLUE));
 
     ctx.draw_series(
-        LineSeries::new((x_min*10..=x_max*10)
-                            .map(|x| x as f32 / 10.0)
-                            .map(|x| (x, solver.solve_at_point(x).unwrap())), &RED)
+        LineSeries::new((0..=x_max*10)
+                            .map(|x| x as f64 / 10.0)
+                            .map(|x| (x, dopri_solver.solve_at_point(x).unwrap())), &BLUE)
     ).unwrap()
-        .label("Euler")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
-
-    ctx.draw_series(
-        LineSeries::new((x_min*10..=x_max*10)
-                            .map(|x| x as f32 / 10.0)
-                            .map(|x| (x, rk4_solver.solve_at_point(x).unwrap())), &BLUE)
-    ).unwrap()
-        .label("Runge-Kutta")
+        .label("Dormand-Prince")
         .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLUE));
 
     ctx.draw_series(
         LineSeries::new((x_min*10..=x_max*10)
-                            .map(|x| x as f32 / 10.0)
+                            .map(|x| x as f64 / 10.0)
                             .map(|x| (x, actual_soln(x))), &GREEN)
     ).unwrap()
         .label("Actual solution")

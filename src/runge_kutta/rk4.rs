@@ -1,7 +1,7 @@
 use crate::solver::Solver;
 use std::cmp::Ordering::Equal;
 
-pub struct EulerSolver<'a> {
+pub struct RK4Solver<'a> {
     t_curr: f64,
     x_curr: f64,
     step_size: f64,
@@ -9,9 +9,9 @@ pub struct EulerSolver<'a> {
     f: Box<dyn Fn(f64, f64) -> f64 + 'a>,
 }
 
-impl<'a> EulerSolver<'a> {
-    pub fn new (f: impl Fn(f64, f64) -> f64 + 'a, t_0: f64, x_0: f64, step_size: f64) -> Self {
-        EulerSolver {
+impl<'a> RK4Solver<'a> {
+    pub fn new(f: impl Fn(f64, f64) -> f64 + 'a, t_0: f64, x_0: f64, step_size: f64) -> Self {
+        RK4Solver {
             t_curr: t_0,
             x_curr: x_0,
             step_size,
@@ -21,12 +21,7 @@ impl<'a> EulerSolver<'a> {
     }
 }
 
-impl Iterator for EulerSolver<'_> {
-    type Item = (f64, f64);
-    fn next(&mut self) -> Option<(f64, f64)> { self._next() }
-}
-
-impl<'a> Solver<'a> for EulerSolver<'a> {
+impl<'a> Solver<'a> for RK4Solver<'a> {
     fn solve_at_point(&mut self, t: f64) -> Option<f64> {
         if t > self.t_curr {
             for point in self {
@@ -37,9 +32,9 @@ impl<'a> Solver<'a> for EulerSolver<'a> {
             None
         } else {
             match self.solved_pts.binary_search_by(|a| a.0.partial_cmp(&t)
-                                                                    .unwrap_or(Equal)) {
+                .unwrap_or(Equal)) {
                 Ok(idx) => Some(self.solved_pts[idx].1),
-                Err(idx) => {println!("err"); Some(self.solved_pts[idx].0)}
+                Err(idx) => Some(self.solved_pts[idx].1)
             }
         }
     }
@@ -67,15 +62,29 @@ impl<'a> Solver<'a> for EulerSolver<'a> {
     }
 
     fn _next(&mut self) -> Option<(f64, f64)> {
-        let t_prev = self.t_curr;
-        let x_prev = self.x_curr;
+        let y_n = self.x_curr;
+        let t_n = self.t_curr;
+        let h = self.step_size;
+        let f = &self.f;
 
-        self.t_curr += self.step_size;
+        let k_1 = f(y_n, t_n);
+        let k_2 = f(t_n + h/2.0, y_n + h*k_1.clone()/2.0);
+        let k_3 = f(t_n + h/2.0, y_n + h*k_2.clone()/2.0);
+        let k_4 = f(t_n + h, y_n + h*k_3.clone());
+
+        self.x_curr = y_n + 1.0/6.0*h*(k_1 + 2.0*k_2 + 2.0*k_3 + k_4);
+        self.t_curr = t_n + h;
         self.t_curr = (self.t_curr * 100000000.0).round() / 100000000.0;
-        self.x_curr += self.step_size * (self.f)(t_prev, x_prev);
 
         self.solved_pts.push((self.t_curr, self.x_curr));
         Some((self.t_curr, self.x_curr))
+    }
+}
+
+impl Iterator for RK4Solver<'_> {
+    type Item = (f64, f64);
+    fn next(&mut self) -> Option<Self::Item> {
+        self._next()
     }
 }
 
